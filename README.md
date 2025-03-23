@@ -8,8 +8,10 @@ A minimal Chrome extension that gives you access to different Large Language Mod
 - Support for multiple LLM providers:
   - OpenAI (GPT-3.5, GPT-4)
   - Anthropic (Claude)
-- Option to include current page content as context for your queries
-  - Preview the extracted page content before sending
+- Smart context inclusion:
+  - Selected text is used as context if available
+  - Falls back to page content when nothing is selected
+  - Preview the extracted context before sending
 - Local API key storage (never sent to any third-party servers)
 - Customizable model settings
 - Simple and clean user interface
@@ -63,8 +65,11 @@ A minimal Chrome extension that gives you access to different Large Language Mod
 
 3. Select your preferred LLM provider and model from the dropdowns
 
-4. Optionally check "Include page content as context" to let the AI see the current webpage content
-   - You can click the "Page Context" tab to preview what will be sent
+4. For context-aware queries:
+   - Select text on the page before or after opening the widget
+   - Check "Include page content as context" to use the selected text
+   - If no text is selected, the entire page content will be used
+   - You can preview what will be sent in the "Page Context" tab
 
 5. Type your query in the text input
 

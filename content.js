@@ -6,6 +6,7 @@ let widgetInitialized = false;
 let includePageContext = false;
 let activeTab = 'chat'; // Default tab is chat
 let extractedPageContent = '';
+let isUsingSelection = false;
 let modelsByProvider = {
   'openai': ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'o1'],
   'anthropic': ['claude-2', 'claude-instant']
@@ -210,7 +211,11 @@ function updateContextViewer(content) {
   const contextViewer = document.getElementById('llm-widget-context-viewer');
   if (contextViewer) {
     if (content) {
-      contextViewer.innerHTML = `<pre class="llm-widget-context-pre">${escapeHTML(content)}</pre>`;
+      const sourceIndicator = isUsingSelection 
+        ? '<div class="llm-widget-context-source">Using selected text as context</div>'
+        : '<div class="llm-widget-context-source">Using full page content as context</div>';
+      
+      contextViewer.innerHTML = `${sourceIndicator}<pre class="llm-widget-context-pre">${escapeHTML(content)}</pre>`;
     } else {
       contextViewer.innerHTML = `<p class="llm-widget-context-note">Toggle "Include page content as context" to see the text that will be sent to the LLM.</p>`;
     }
@@ -235,9 +240,36 @@ function clearConversation() {
   document.getElementById('llm-widget-error').style.display = 'none';
 }
 
-// Extract text content from the current page
+// Get currently selected text on the page
+function getSelectedText() {
+  const selection = window.getSelection();
+  if (selection && selection.toString().trim().length > 0) {
+    return selection.toString().trim();
+  }
+  return null;
+}
+
+// Extract text content from the current page or selection
 function extractPageContent() {
   try {
+    // First check if there is any text selected on the page
+    const selectedText = getSelectedText();
+    
+    if (selectedText) {
+      isUsingSelection = true;
+      const pageUrl = window.location.href;
+      const pageTitle = document.title;
+      
+      return `
+PAGE TITLE: ${pageTitle}
+PAGE URL: ${pageUrl}
+SELECTED CONTENT:
+${selectedText}`;
+    }
+    
+    // If no selection, fall back to extracting the whole page content
+    isUsingSelection = false;
+    
     // Clone the body to avoid modifying the actual page
     const bodyClone = document.body.cloneNode(true);
     
@@ -245,14 +277,59 @@ function extractPageContent() {
     const elementsToRemove = bodyClone.querySelectorAll('script, style, svg, noscript, iframe, img, video, audio, canvas, [aria-hidden="true"], .llm-widget-container');
     elementsToRemove.forEach(el => el.remove());
     
-    // Get all text nodes
-    const textContent = bodyClone.textContent || bodyClone.innerText || '';
+    // Improved text extraction that preserves some structure and ensures spaces between nodes
+    let textContent = '';
     
-    // Clean up the text: remove excessive whitespace
+    // Helper function to extract text with proper spacing
+    function extractTextFromNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        // Add the text content with trailing space if not just whitespace
+        const text = node.textContent.trim();
+        if (text) {
+          textContent += text + ' ';
+        }
+        return;
+      }
+      
+      // Handle block elements by adding newlines
+      const style = window.getComputedStyle(node);
+      const isBlock = style.display === 'block' || 
+                      style.display === 'flex' || 
+                      style.display === 'grid' || 
+                      node.tagName === 'BR' ||
+                      node.tagName === 'P' || 
+                      node.tagName === 'DIV' || 
+                      node.tagName === 'LI';
+      
+      // Process children
+      for (const child of node.childNodes) {
+        if (child.nodeType === Node.ELEMENT_NODE || child.nodeType === Node.TEXT_NODE) {
+          extractTextFromNode(child);
+        }
+      }
+      
+      // Add newline after block elements
+      if (isBlock && !textContent.endsWith('\n')) {
+        textContent += '\n';
+      }
+    }
+    
+    // Start extraction from body
+    const validElements = bodyClone.querySelectorAll('body, article, main, div, section, p, h1, h2, h3, h4, h5, h6, span, a, li, td, th');
+    validElements.forEach(node => {
+      // Only process top-level elements to avoid duplication
+      if (!node.parentNode || node.parentNode.nodeName === 'BODY') {
+        extractTextFromNode(node);
+      }
+    });
+    
+    // Clean up the text: remove excessive whitespace and limit length
     let cleanText = textContent
-      .replace(/\s+/g, ' ')
+      .replace(/\s+/g, ' ')  // Replace multiple spaces with a single space
+      .replace(/\n\s+/g, '\n')  // Remove spaces after newlines
+      .replace(/\n+/g, '\n')  // Replace multiple newlines with a single newline
       .trim()
-      .substring(0, 50000); // Limit to 5000 characters to avoid token limits
+      .substring(0, 5000); // Limit to 5000 characters to avoid token limits
     
     // Add the page URL and title
     const pageUrl = window.location.href;
@@ -357,6 +434,12 @@ function toggleWidget() {
         }
       }, 500);
       
+      // If widget is being shown, check for selected text immediately
+      if (includePageContext) {
+        extractedPageContent = extractPageContent();
+        updateContextViewer(extractedPageContent);
+      }
+      
     } else {
       console.log('Hiding widget');
       widget.style.display = 'none';
@@ -424,11 +507,12 @@ async function sendQuery() {
     // Prepare the query with context if enabled
     let queryWithContext = query;
     if (includePageContext) {
-      // Use the already extracted page content if available, otherwise extract it
-      if (!extractedPageContent) {
-        extractedPageContent = extractPageContent();
-      }
-      queryWithContext = `The following is content from the current webpage. Please use this as context for answering my query, but only if relevant.\n\n${extractedPageContent}\n\nMy query is: ${query}`;
+      // Check for selected text again at the time of sending the query
+      // This allows the user to select text after the widget is open
+      extractedPageContent = extractPageContent();
+      
+      const contextSource = isUsingSelection ? "selected text" : "webpage content";
+      queryWithContext = `The following is ${contextSource} from the current webpage. Please use this as context for answering my query, but only if relevant.\n\n${extractedPageContent}\n\nMy query is: ${query}`;
     }
     
     let response;

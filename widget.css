@@ -154,6 +154,17 @@
   padding: 20px 0;
 }
 
+.llm-widget-context-source {
+  background-color: #ddf4ea;
+  color: #22863a;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  border-left: 4px solid #28a745;
+}
+
 .llm-widget-context-pre {
   margin: 0;
   white-space: pre-wrap;
