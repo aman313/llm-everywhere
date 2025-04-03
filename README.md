@@ -40,7 +40,15 @@ A minimal Chrome extension that gives you access to different Large Language Mod
 
 2. Find "LLM Everywhere" in the list
 
-3. Set or change the shortcut for "Toggle LLM Widget" (the default is Ctrl+Shift+Space)
+3. Set or change the shortcut for "Toggle LLM Widget"
+   - Default for Windows/Linux: Ctrl+L
+   - Default for Mac: Option+L (Alt+L)
+   
+4. **Important note for Mac users**: Chrome may not automatically assign the keyboard shortcut due to system conflicts. If the shortcut doesn't work:
+   - Go to `chrome://extensions/shortcuts` 
+   - Click in the input field next to "Toggle LLM Widget"
+   - Press your desired key combination (Option+L recommended)
+   - Click somewhere else on the page to save the shortcut
 
 ## Configuration
 
@@ -60,7 +68,9 @@ A minimal Chrome extension that gives you access to different Large Language Mod
 
 1. Navigate to any webpage
 
-2. Press the keyboard shortcut (default: Ctrl+Shift+Space) to open the LLM widget
+2. Press the keyboard shortcut to open the LLM widget:
+   - Windows/Linux: Ctrl+L (default)
+   - Mac: Option+L (default) 
    - Alternatively, you can also click on the extension icon in the toolbar
 
 3. Select your preferred LLM provider and model from the dropdowns
@@ -85,7 +95,7 @@ A minimal Chrome extension that gives you access to different Large Language Mod
 
 ### Widget Doesn't Open with Keyboard Shortcut
 
-1. Make sure the keyboard shortcut is set correctly at `chrome://extensions/shortcuts`
+1. **On Mac**: Chrome often doesn't automatically assign keyboard shortcuts for extensions. Go to `chrome://extensions/shortcuts` and manually set the shortcut.
 
 2. Try clicking on the extension icon in the toolbar instead
 

@@ -1,3 +1,22 @@
+// Listen for extension installation or update
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    // Show a welcome notification with shortcut information
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon48.png',
+      title: 'LLM Everywhere Installed',
+      message: 'To set up or change keyboard shortcuts, go to Chrome > Extensions > Shortcuts (or visit chrome://extensions/shortcuts)',
+      priority: 2
+    });
+    
+    // On Mac, open the shortcuts page automatically to help users set it up
+    if (navigator.platform.includes('Mac')) {
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    }
+  }
+});
+
 // Listen for keyboard shortcut
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'toggle-llm-widget') {
